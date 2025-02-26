@@ -1,29 +1,30 @@
-name: Build and Inspect React App
-
+name: "Build and Push to GHCR"
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
+
+env:
+  working-directroy: ./
 
 jobs:
-  build:
-    runs-on: ubuntu-22.04
-
+  GHCR:
+    runs-on: ubuntu-latest
     steps:
-      - name: Checkout the app
-        uses: actions/checkout@v2
-
-      - name: Set up Java
-        uses: actions/setup-java@v3
+      - name: Check out the repo
+        uses: actions/checkout@v4
+        
+      - name: 'Login to GitHub Container Registry'
+        uses: docker/login-action@v1
         with:
-          distribution: "temurin" # Alternativen: 'zulu', 'adopt', etc.
-          java-version: "17"
+          registry: ghcr.io
+          username: ${{github.actor}}
+          password: ${{secrets.GITHUB_TOKEN}}
 
-      - name: Install dependencies
-        run: npm i
-
-      - name: Build the app
-        run: npm run build
-
-      - name: Debug build folder
-        run: ls -la
+      - name: 'Build Inventory Image'
+        env: 
+          tag: ${{ github.ref_name }}
+        run: |
+            docker build -f ./Dockerfile.frontend --tag ghcr.io/yohann30elias/counter-frontend:${tag} .
+            docker build -f ./Dockerfile.backend --tag ghcr.io/yohann30elias/counter-backend:${tag} .
+            docker push ghcr.io/yohann30elias/counter-frontend:${tag}
+            docker push ghcr.io/yohann30elias/counter-backend:${tag}
