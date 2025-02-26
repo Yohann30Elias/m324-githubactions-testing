@@ -15,8 +15,12 @@ jobs:
       - name: Check out the repo
         uses: actions/checkout@v4
         
-      - name: Debug - Check Files
-        run: ls -la
+      - name: Debug - Check Files and Paths
+        run: |
+          echo "Current Directory:"
+          pwd
+          echo "Files in the Current Directory:"
+          ls -la
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
