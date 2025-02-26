@@ -1,30 +1,38 @@
-name: "Build and Push to GHCR"
-on:
-  release:
-    types: [published]
+name: Build and Push Docker Image to Docker Hub
 
-env:
-  working-directroy: ./
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow on push to the main branch
+  pull_request:
+    branches:
+      - main  # Trigger on PR to the main branch
 
 jobs:
-  GHCR:
+  build:
     runs-on: ubuntu-latest
-    steps:
-      - name: Check out the repo
-        uses: actions/checkout@v4
-        
-      - name: 'Login to GitHub Container Registry'
-        uses: docker/login-action@v1
-        with:
-          registry: ghcr.io
-          username: ${{github.actor}}
-          password: ${{secrets.GITHUB_TOKEN}}
 
-      - name: 'Build Inventory Image'
-        env: 
-          tag: ${{ github.ref_name }}
-        run: |
-            docker build -f ./Dockerfile.frontend --tag ghcr.io/yohann30elias/counter-frontend:${tag} .
-            docker build -f ./Dockerfile.backend --tag ghcr.io/yohann30elias/counter-backend:${tag} .
-            docker push ghcr.io/yohann30elias/counter-frontend:${tag}
-            docker push ghcr.io/yohann30elias/counter-backend:${tag}
+    steps:
+      # Checkout the repository code
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      # Set up Docker
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      # Log in to Docker Hub
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # Build and push the Docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          push: true
+          tags: kingofpilze/test:latest
+
