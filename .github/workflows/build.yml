@@ -3,10 +3,10 @@ name: Build and Push Docker Image to Docker Hub
 on:
   push:
     branches:
-      - main  # Trigger the workflow on push to the main branch
+      - main
   pull_request:
     branches:
-      - main  # Trigger on PR to the main branch
+      - main
 
 jobs:
   build:
@@ -21,6 +21,21 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
+      # Linting (Beispiel mit Hadolint für Dockerfiles)
+      - name: Lint Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+
+      # Caching von Abhängigkeiten (optional, falls relevant)
+      - name: Cache Docker layers
+        uses: actions/cache@v3
+        with:
+          path: /tmp/.buildx-cache
+          key: ${{ runner.os }}-buildx-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-buildx-
+
       # Log in to Docker Hub
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -34,5 +49,15 @@ jobs:
         with:
           context: .
           push: true
-          tags: kingofpilze/test:latest
+          tags: kingofpilze/testing:latest
+          cache-from: type=local,src=/tmp/.buildx-cache
+          cache-to: type=local,dest=/tmp/.buildx-cache
 
+      # Security Scan mit Trivy
+      - name: Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: kingofpilze/testing:latest
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
