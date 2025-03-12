@@ -10,7 +10,12 @@ env:
 
 jobs:
   docker:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [14, 16, 18]  # Teste mit verschiedenen Node.js-Versionen
+        os: [ubuntu-latest, windows-latest]  # Teste auf verschiedenen Betriebssystemen
+    runs-on: ${{ matrix.os }}  # Dynamisch basierend auf der Matrix (Ubuntu oder Windows)
+    
     steps:
       - name: Check out the repo
         uses: actions/checkout@v4
@@ -26,7 +31,7 @@ jobs:
         run: |
           cat <<EOF > Dockerfile
           FROM alpine:latest
-          CMD ["echo", "Hello, dynamically created Dockerfile!"]
+          CMD ["echo", "Hello, dynamically created Dockerfile on Node.js ${{ matrix.node-version }}!"]
           EOF
 
       - name: Log in to Docker Hub
