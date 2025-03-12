@@ -26,6 +26,7 @@ jobs:
           pwd
           echo "Files in the Current Directory:"
           ls -la
+        shell: bash  # Shell für Linux
 
       - name: Create Dockerfile
         run: |
@@ -33,6 +34,7 @@ jobs:
           FROM alpine:latest
           CMD ["echo", "Hello, dynamically created Dockerfile on Node.js ${{ matrix.node-version }}!"]
           EOF
+        shell: bash  # Shell für Linux
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
@@ -47,8 +49,35 @@ jobs:
         run: |
           docker build -t docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} -f ./Dockerfile .
           docker push docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        shell: bash  # Shell für Linux
 
       - name: Security Scan with Trivy
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: docker.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Debug - Check Files and Paths (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          Write-Host "Current Directory:"
+          Get-Location
+          Write-Host "Files in the Current Directory:"
+          Get-ChildItem
+        shell: pwsh  # PowerShell für Windows
+
+      - name: Create Dockerfile (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          $dockerfile = @"
+          FROM mcr.microsoft.com/windows/servercore:ltsc2019
+          CMD ["echo", "Hello, dynamically created Dockerfile on Node.js ${{ matrix.node-version }}!"]
+          "@
+          $dockerfile | Out-File -FilePath Dockerfile -Encoding ASCII
+        shell: pwsh  # PowerShell für Windows
+
+      - name: Build and Push Docker Image (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          docker build -t docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }} -f ./Dockerfile .
+          docker push docker.io/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+        shell: pwsh  # PowerShell für Windows
